@@ -78,6 +78,14 @@ Scripts in [Windows_Software_Installation/OVMS](Windows_Software_Installation/OV
 - [OVMS launcher](Windows_Software_Installation/OVMS/README_OVMS.md)
 - [OVMS agentic launcher](Windows_Software_Installation/OVMS/README_OVMS_AGENTIC.md) for tool calling and agent workflows
 
+## KernelFoundry on Windows
+
+KernelFoundry on Windows is a separate capability for hardware-aware GPU kernel development and optimization (SYCL, OpenCL, and Vulkan) using Intel® oneAPI DPC++/C++ Compiler (`icpx`), Intel® OpenCL Offline Compiler (`ocloc`), and Intel® VTune™ Profiler (`vtune`). It is not part of the default installer framework flow.
+
+Scripts in [Windows_Software_Installation/KernelFoundry](Windows_Software_Installation/KernelFoundry) install dependencies, configure the toolchain and MCP server, and verify GPU execution:
+
+- [KernelFoundry setup guide](Windows_Software_Installation/KernelFoundry/README_KERNELFOUNDRY.md)
+
 ## Hermes agent skills
 
 Hermes agent skills are a separate capability. They are not part of the installer framework and are not installed by the Windows or Linux setup flows. This pack is currently Windows only.
@@ -99,6 +107,7 @@ For detailed, OS-specific installation steps, use:
 
 - Windows installer assets: [Windows_Software_Installation](Windows_Software_Installation)
 - Windows OVMS scripts (separate from the installer): [Windows_Software_Installation/OVMS](Windows_Software_Installation/OVMS)
+- Windows KernelFoundry scripts (separate from the installer): [Windows_Software_Installation/KernelFoundry](Windows_Software_Installation/KernelFoundry)
 - Hermes agent skills (separate from the installer): [agent-skills](agent-skills)
 - Linux installer assets: [Linux_Software_Installation](Linux_Software_Installation)
 
