@@ -185,8 +185,10 @@ def run_verification(kf_root: str):
             raise RuntimeError(f"Required tool '{tool}' not found on PATH.")
         print(f"  [OK] {tool}: {resolved}")
 
+    icpx_out = subprocess.check_output(["icpx", "--version"], text=True, stderr=subprocess.STDOUT).splitlines()[0]
     vtune_out = subprocess.check_output(["vtune", "--version"], text=True, stderr=subprocess.STDOUT).splitlines()[0]
-    print(f"  [OK] VTune version: {vtune_out}")
+    print(f"  [OK] DPC++ Compiler: {icpx_out}")
+    print(f"  [OK] VTune Profiler: {vtune_out}")
 
     print("\n=== 2. Verifying KernelFoundry Package & Windows VTune Configuration ===")
     kf_ver = importlib.metadata.version("kernelfoundry")

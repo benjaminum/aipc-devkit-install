@@ -14,11 +14,11 @@
       - .\kernelfoundry_setup.ps1 uninstall (or -Uninstall) : Removes KernelFoundry .venv and workspace MCP configs
 
     Steps performed during installation:
-      1. Ensures Intel oneAPI Base Toolkit (2026.0+, providing icpx, ocloc, and VTune Profiler) and Graphviz are installed via winget.
+      1. Ensures Intel oneAPI Toolkit 2026.2 (providing icpx, ocloc, and VTune Profiler) and Graphviz are installed.
       2. Creates the workspace directory and a Python 3.12 virtual environment (.venv) using uv.
       3. Configures selective Windows toolchain environment variables (MSVC, Windows SDK, oneAPI icpx/ocloc/vtune,
          Vulkan SDK, Level Zero SDK, Graphviz, CMAKE_GENERATOR=Ninja, PYTHONUTF8=1).
-      4. Installs PyTorch XPU (torch==2.13.0+xpu, compatible with MSVC 14.44+ and oneAPI 2026.0 sycl9.dll).
+      4. Installs PyTorch XPU (torch==2.15.0+xpu, torchvision, torchaudio).
       5. Installs kernelfoundry[all] from PyPI and applies Windows VTune profiler integration.
       6. Registers the KernelFoundry MCP server and custom coding agents (VS Code, GitHub Copilot, Claude Code, Cursor).
       7. Runs self-contained GPU verification checks across SYCL/XPU, OpenCL, Vulkan, and VTune on the Intel GPU.
@@ -124,8 +124,8 @@ function Get-StepDefinitions {
     return @(
         [PSCustomObject]@{
             Id          = "winget-deps"
-            Name        = "1. System Dependencies (Winget)"
-            Description = "Install Intel oneAPI Base Toolkit (icpx, ocloc, VTune Profiler) & Graphviz (dot)"
+            Name        = "1. System Dependencies (oneAPI 2026.2 & Graphviz)"
+            Description = "Install Intel oneAPI Toolkit 2026.2 (icpx, ocloc, VTune Profiler) & Graphviz (dot)"
             DefaultRun  = (-not $SkipWinget)
         },
         [PSCustomObject]@{
@@ -143,7 +143,7 @@ function Get-StepDefinitions {
         [PSCustomObject]@{
             Id          = "pytorch-xpu"
             Name        = "4. PyTorch XPU Runtime"
-            Description = "Install torch==2.13.0+xpu, torchvision, torchaudio (intel-sycl-rt 2026.0)"
+            Description = "Install torch==2.15.0+xpu, torchvision, torchaudio"
             DefaultRun  = $true
         },
         [PSCustomObject]@{
@@ -175,7 +175,7 @@ function Get-StepStatus {
     $venvPython = Join-Path $KfDir ".venv\Scripts\python.exe"
     switch ($StepId) {
         "winget-deps" {
-            $hasOneApi = (Test-Path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin\icpx.exe") -and
+            $hasOneApi = (Test-Path "C:\Program Files (x86)\Intel\oneAPI\compiler\2026.2\bin\icpx.exe") -and
                          (Test-Path "C:\Program Files (x86)\Intel\oneAPI\vtune\latest\bin64\vtune.exe")
             $hasGraphviz = Test-Path "C:\Program Files\Graphviz\bin\dot.exe"
             if ($hasOneApi -and $hasGraphviz) { return "Installed" }
@@ -226,11 +226,18 @@ function Invoke-SetupStep {
 
     switch ($StepId) {
         "winget-deps" {
-            if (-not (Test-Path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin\icpx.exe")) {
-                Write-StepLog "[1/7] Installing Intel oneAPI Base Toolkit (icpx, ocloc, VTune) via winget..." "Yellow"
-                Invoke-ExternalCommand -FilePath "winget" -Arguments @("install", "--id", "Intel.OneAPI.Toolkit", "--silent", "--accept-package-agreements", "--accept-source-agreements")
+            if (-not (Test-Path "C:\Program Files (x86)\Intel\oneAPI\compiler\2026.2\bin\icpx.exe")) {
+                Write-StepLog "[1/7] Downloading and installing Intel oneAPI Toolkit 2026.2 (icpx, ocloc, VTune)..." "Yellow"
+                $oneApiUrl = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/728c4418-1b40-47a9-ad51-31530fb27c94/intel-oneapi-toolkit-2026.2.0.661_offline.exe"
+                $oneApiInstaller = Join-Path $env:TEMP "intel-oneapi-toolkit-2026.2.0.661_offline.exe"
+                Invoke-ExternalCommand -FilePath "curl.exe" -Arguments @("-L", "-s", "-S", $oneApiUrl, "-o", $oneApiInstaller)
+                Invoke-ExternalCommand -FilePath $oneApiInstaller -Arguments @(
+                    "-s", "-a", "--silent", "--eula", "accept",
+                    "-p=NEED_VS2019_INTEGRATION=0", "-p=NEED_VS2022_INTEGRATION=0", "-p=NEED_VS2026_INTEGRATION=0"
+                )
+                Remove-Item -Path $oneApiInstaller -Force -ErrorAction SilentlyContinue
             } else {
-                Write-StepLog "[1/7] Intel oneAPI Base Toolkit already installed." "Green"
+                Write-StepLog "[1/7] Intel oneAPI Toolkit 2026.2 already installed." "Green"
             }
 
             if (-not (Test-Path "C:\Program Files\Graphviz\bin\dot.exe")) {
@@ -268,10 +275,10 @@ function Invoke-SetupStep {
         }
 
         "pytorch-xpu" {
-            Write-StepLog "[4/7] Installing PyTorch 2.13.0+xpu for Intel GPU..." "Yellow"
+            Write-StepLog "[4/7] Installing PyTorch 2.15.0+xpu for Intel GPU..." "Yellow"
             Invoke-ExternalCommand -FilePath "uv" -Arguments @(
                 "pip", "install", "--python", $pythonExe,
-                "torch==2.13.0+xpu", "torchvision==0.28.0+xpu", "torchaudio==2.11.1+xpu",
+                "torch==2.15.0+xpu", "torchvision", "torchaudio",
                 "--index-url", "https://download.pytorch.org/whl/xpu"
             )
         }
